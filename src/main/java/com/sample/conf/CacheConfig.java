@@ -16,12 +16,12 @@ import net.sf.ehcache.event.CacheEventListenerAdapter;
 public class CacheConfig {
 
   public static final String CACHE_NAME = "sampleCacheName";
-  public static final int TTL_IN_SECONDS = 3;
+  public static final int TTL_IN_SECONDS = 300;
 
   @Bean
   public CacheManager getCacheManager() {
     return CacheManager.getInstance();
-  }
+  }  
 
   @Bean
   @Qualifier(CACHE_NAME)
@@ -39,24 +39,13 @@ public class CacheConfig {
     cache.getCacheEventNotificationService().registerListener(new CacheEventListenerAdapter() {
       @Override
       public void notifyElementExpired(Ehcache ehCache, Element element) {
-        evictCacheGetStuck(element);
+        cacheEvictionStarted(element);
       }
     });
     return cache;
   }
 
-  private void evictCacheGetStuck(Element element) {
-    System.out.println(
-        Thread.currentThread().getName() + ":start evict " + element.getObjectKey().toString());
-    try {
-      // suppose never finish
-      Thread.sleep(1000 * 900);
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+  private void cacheEvictionStarted(Element element) {
+    System.out.println(Thread.currentThread().getName() + ":start evict " + element.getObjectKey().toString());    
   }
-
-
-
 }
