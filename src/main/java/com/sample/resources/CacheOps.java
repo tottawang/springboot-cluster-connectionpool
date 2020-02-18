@@ -18,7 +18,7 @@ public class CacheOps {
   private Cache cache;
 
   public void putCache(String key, int value) {
-    TestLog.log("add " + key + " to cache with value " + value);
+    TestLog.log("update cache '" + key + "' with value: " + value);
     cache.put(new Element(key, value, true), false);
   }
 }

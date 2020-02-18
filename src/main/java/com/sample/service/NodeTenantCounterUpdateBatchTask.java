@@ -14,13 +14,13 @@ public class NodeTenantCounterUpdateBatchTask implements Runnable {
   public NodeTenantCounterUpdateBatchTask(NodeTenantCounter counter, CacheOps cacheOps) {
     this.counter = counter;
     this.cacheOps = cacheOps;
+    TestLog.log("started new batching thread");
   }
 
   public boolean addRequest(NodeTenantKey key) {
     if (closed) {
       return false;
     }
-
     modified = true;
     return true;
   }
@@ -32,29 +32,31 @@ public class NodeTenantCounterUpdateBatchTask implements Runnable {
           + NodeTenantCounter.MAX_BATCH_OPEN_MS + 1;
       long t = TimeUnit.MILLISECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS);
 
-      synchronized (this) { // not sure why we need lock
+      synchronized (this) {
         while (!closed && (t < deadlineMs)) {
           t = TimeUnit.MILLISECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS);
 
           // zero means "wait forever", can't have that.
           long toWait = Math.max(1, deadlineMs - t);
+          TestLog.log("waiting " + toWait + "ms on thread: " + Thread.currentThread().getName());
           wait(toWait);
         }
-
         closed = true;
+      }
 
-        // update cache
-        if (modified) {
-          putCache();
-        }
+      // update cache
+      if (modified) {
+        putCache();
       }
     } catch (Exception ex) {
       // add proper error handling
+    } finally {
+      TestLog.log("Completed batching on thread: " + Thread.currentThread().getName());
     }
   }
 
   private void putCache() {
-    this.cacheOps.putCache(counter.getKey().asCacheKey(), counter.getCounter().intValue());
+    cacheOps.putCache(counter.getKey().asCacheKey(), counter.getCounter().intValue());
   }
 
 }

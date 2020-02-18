@@ -11,13 +11,14 @@ import com.sample.resources.CacheOps;
 public class NodeTenantCounter {
 
   private NodeTenantKey key;
-  private AtomicInteger counter;
+  private CacheOps cacheOps;
+  private AtomicInteger counter = new AtomicInteger(0);
+  private final NodeTenantCounterUpdateBatchTask[] counterUpdateBatchTask =
+      new NodeTenantCounterUpdateBatchTask[1];
+
   public static final int MAX_BATCH_OPEN_MS = 250;
   private static ExecutorService executor = new ThreadPoolExecutor(10, Integer.MAX_VALUE, 60L,
       TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
-  private final NodeTenantCounterUpdateBatchTask[] counterUpdateBatchTask =
-      new NodeTenantCounterUpdateBatchTask[1];
-  private CacheOps cacheOps;
 
   public NodeTenantCounter(String node, String tenant, CacheOps cacheOps) {
     this.key = new NodeTenantKey(node, tenant);
@@ -45,31 +46,34 @@ public class NodeTenantCounter {
   }
 
   public void increment() {
+    TestLog.log("increment counter");
     counter.getAndIncrement();
     batchChangeRequest();
   }
 
   public void decrement() {
+    TestLog.log("decrement counter");
     counter.getAndDecrement();
     batchChangeRequest();
   }
 
   private void batchChangeRequest() {
-    boolean isBatchedSuccessfully = false;
+    boolean batchSucceed = false;
     try {
       if (counterUpdateBatchTask[0] != null && counterUpdateBatchTask[0].addRequest(this.key)) {
-        isBatchedSuccessfully = true;
+        batchSucceed = true;
       }
     } catch (Exception ex) {
       // can ignore any exception thrown here??
     }
 
-    if (!isBatchedSuccessfully) {
+    if (!batchSucceed) {
       // new request to batch or MAX_BATCH_OPEN_MS elapses
       synchronized (this) {
-        if (counterUpdateBatchTask[0] == null && !counterUpdateBatchTask[0].addRequest(this.key)) {
+        if (counterUpdateBatchTask[0] == null || !counterUpdateBatchTask[0].addRequest(this.key)) {
           NodeTenantCounterUpdateBatchTask updateBatchTask =
               new NodeTenantCounterUpdateBatchTask(this, cacheOps);
+          counterUpdateBatchTask[0] = updateBatchTask;
           updateBatchTask.addRequest(key);
           executor.execute(updateBatchTask);
         }

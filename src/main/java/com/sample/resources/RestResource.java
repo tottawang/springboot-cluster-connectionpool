@@ -26,6 +26,7 @@ public class RestResource {
     String tenant = "myTestTenant";
     String node = "myTestNode";
     container.getCounter(node, tenant).increment();
+    container.getCounter(node, tenant).increment();
     container.getCounter(node, tenant).decrement();
   }
 
