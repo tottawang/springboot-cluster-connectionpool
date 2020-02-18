@@ -2,25 +2,23 @@ package com.sample.resources;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import com.sample.conf.CacheConfig;
+import com.sample.conf.EhCacheConfig;
+import com.sample.service.TestLog;
 
 import net.sf.ehcache.Cache;
+import net.sf.ehcache.Element;
 
 @Component
 public class CacheOps {
 
   @Autowired
-  @Qualifier(CacheConfig.CACHE_NAME)
+  @Qualifier(EhCacheConfig.CACHE_NAME)
   private Cache cache;
 
-  @Async
-  public void evictNeverFinish() {
-    System.out.println(Thread.currentThread().getName() + ":start evict..");
-    cache.getAll(cache.getKeysWithExpiryCheck()).values()
-        .forEach(t -> System.out.println("get cache: " + t.toString()));
+  public void putCache(String key, int value) {
+    TestLog.log("add " + key + " to cache with value " + value);
+    cache.put(new Element(key, value, true), false);
   }
-
 }

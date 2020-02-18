@@ -1,10 +1,10 @@
-package com.sample.domain;
+package com.sample.service;
 
 public class NodeTenantKey {
-  
+
   private String node;
   private String tenant;
-  
+
   public NodeTenantKey(String node, String tenant) {
     this.node = node;
     this.tenant = tenant;
@@ -24,6 +24,10 @@ public class NodeTenantKey {
 
   public void setTenant(String tenant) {
     this.tenant = tenant;
+  }
+
+  public String asCacheKey() {
+    return node + "-" + tenant;
   }
 
   @Override
@@ -60,6 +64,6 @@ public class NodeTenantKey {
   @Override
   public String toString() {
     return "NodeTenantKey [node=" + node + ", tenant=" + tenant + "]";
-  }  
+  }
 
 }
